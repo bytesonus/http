@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "removeComments": false,
+        "noImplicitAny": true,
+        "lib": [
+            "dom",
+            "es2018",
+            "es5"
+        ]
+    }
+}
