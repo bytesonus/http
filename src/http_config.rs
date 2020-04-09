@@ -1,4 +1,4 @@
-use gotham::models::Value;
+use juno::models::Value;
 use nickel::{hyper::net::Fresh, Middleware, MiddlewareResult, Request, Response};
 
 #[derive(Clone)]
@@ -10,12 +10,12 @@ pub struct HttpConfig {
 
 #[derive(Clone)]
 pub enum MiddlewareType {
-    Delete,
-    Get,
+	Delete,
+	Get,
 	Options,
 	Patch,
-    Post,
-    Put,
+	Post,
+	Put,
 	Use
 }
 

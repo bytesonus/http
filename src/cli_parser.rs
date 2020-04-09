@@ -1,8 +1,8 @@
 use clap::{crate_authors, crate_name, crate_version, App, Arg};
-use gotham::GothamModule;
+use juno::JunoModule;
 
 #[allow(clippy::collapsible_if)]
-pub fn from_cli_args() -> GothamModule {
+pub fn from_cli_args() -> JunoModule {
 	let args = App::new(crate_name!())
 		.version(crate_version!())
 		.author(crate_authors!())
@@ -55,14 +55,14 @@ pub fn from_cli_args() -> GothamModule {
 	}
 
 	let mut default_socket_location = std::env::current_dir().unwrap();
-	default_socket_location.push(args.value_of("socket-location").unwrap_or("../gotham.sock"));
+	default_socket_location.push(args.value_of("socket-location").unwrap_or("../juno.sock"));
 	let default_socket_location = default_socket_location.as_os_str().to_str().unwrap();
 
 	if cfg!(target_family = "windows") {
 		if args.value_of("socket-location").is_some() {
 			panic!("Listening on unix sockets are not supported on windows");
 		} else {
-			GothamModule::from_inet_socket(
+			JunoModule::from_inet_socket(
 				args.value_of("host").unwrap_or("127.0.0.1"),
 				args.value_of("port")
 					.unwrap_or("2203")
@@ -72,7 +72,7 @@ pub fn from_cli_args() -> GothamModule {
 		}
 	} else {
 		if args.value_of("port").is_some() {
-			GothamModule::from_inet_socket(
+			JunoModule::from_inet_socket(
 				args.value_of("host").unwrap_or("127.0.0.1"),
 				args.value_of("port")
 					.unwrap_or("2203")
@@ -80,7 +80,7 @@ pub fn from_cli_args() -> GothamModule {
 					.unwrap(),
 			)
 		} else {
-			GothamModule::from_unix_socket(
+			JunoModule::from_unix_socket(
 				args.value_of("socket-location")
 					.unwrap_or(default_socket_location),
 			)

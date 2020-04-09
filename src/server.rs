@@ -4,11 +4,11 @@ use crate::http_config::MiddlewareContext;
 
 use std::collections::HashMap;
 
-use gotham::models::Value;
+use juno::models::Value;
 use nickel::{Nickel, HttpRouter};
 
 pub fn app_delete(args: HashMap<String, Value>) -> Value {
-    let value = Value::String(String::from("/"));
+	let value = Value::String(String::from("/"));
 	let string = String::from("/");
 	let path = args
 		.get("path")
@@ -32,7 +32,7 @@ pub fn app_delete(args: HashMap<String, Value>) -> Value {
 }
 
 pub fn app_get(args: HashMap<String, Value>) -> Value {
-    let value = Value::String(String::from("/"));
+	let value = Value::String(String::from("/"));
 	let string = String::from("/");
 	let path = args
 		.get("path")
@@ -56,7 +56,7 @@ pub fn app_get(args: HashMap<String, Value>) -> Value {
 }
 
 pub fn app_options(args: HashMap<String, Value>) -> Value {
-    let value = Value::String(String::from("/"));
+	let value = Value::String(String::from("/"));
 	let string = String::from("/");
 	let path = args
 		.get("path")
@@ -80,7 +80,7 @@ pub fn app_options(args: HashMap<String, Value>) -> Value {
 }
 
 pub fn app_patch(args: HashMap<String, Value>) -> Value {
-    let value = Value::String(String::from("/"));
+	let value = Value::String(String::from("/"));
 	let string = String::from("/");
 	let path = args
 		.get("path")
@@ -104,7 +104,7 @@ pub fn app_patch(args: HashMap<String, Value>) -> Value {
 }
 
 pub fn app_post(args: HashMap<String, Value>) -> Value {
-    let value = Value::String(String::from("/"));
+	let value = Value::String(String::from("/"));
 	let string = String::from("/");
 	let path = args
 		.get("path")
@@ -128,7 +128,7 @@ pub fn app_post(args: HashMap<String, Value>) -> Value {
 }
 
 pub fn app_put(args: HashMap<String, Value>) -> Value {
-    let value = Value::String(String::from("/"));
+	let value = Value::String(String::from("/"));
 	let string = String::from("/");
 	let path = args
 		.get("path")
@@ -176,44 +176,44 @@ pub fn app_use(args: HashMap<String, Value>) -> Value {
 }
 
 pub fn listen(args: HashMap<String, Value>) -> Value {
-    let mut http_listener = crate::LISTENER.lock().unwrap();
-    let http_config = crate::HTTP_CONFIG.lock().unwrap();
+	let mut http_listener = crate::LISTENER.lock().unwrap();
+	let http_config = crate::HTTP_CONFIG.lock().unwrap();
 
-    if http_listener.is_some() {
-        // Kill the server.
-        // So far, no way to do that. Nickel doesn't support it yet
-        panic!("Excuse me wtf?");
-    }
+	if http_listener.is_some() {
+		// Kill the server.
+		// So far, no way to do that. Nickel doesn't support it yet
+		panic!("Excuse me wtf?");
+	}
 
 	let mut server = Nickel::with_data(MiddlewareContext {
-        data: Value::Null
-    });
+		data: Value::Null
+	});
 
-    for config in http_config.iter() {
-        match &config.config_type {
-            MiddlewareType::Delete => {
-                server.delete::<String, HttpConfig>(config.path.clone(), config.clone());
-            },
-        	MiddlewareType::Get => {
-                server.get::<String, HttpConfig>(config.path.clone(), config.clone());
-            },
-        	MiddlewareType::Options => {
-                server.options::<String, HttpConfig>(config.path.clone(), config.clone());
-            },
-        	MiddlewareType::Patch => {
-                server.patch::<String, HttpConfig>(config.path.clone(), config.clone());
-            },
-        	MiddlewareType::Post => {
-                server.post::<String, HttpConfig>(config.path.clone(), config.clone());
-            },
-        	MiddlewareType::Put => {
-                server.put::<String, HttpConfig>(config.path.clone(), config.clone());
-            },
-        	MiddlewareType::Use => {
-                server.utilize::<HttpConfig>(config.clone());
-            },
-        }
-    }
+	for config in http_config.iter() {
+		match &config.config_type {
+			MiddlewareType::Delete => {
+				server.delete::<String, HttpConfig>(config.path.clone(), config.clone());
+			},
+			MiddlewareType::Get => {
+				server.get::<String, HttpConfig>(config.path.clone(), config.clone());
+			},
+			MiddlewareType::Options => {
+				server.options::<String, HttpConfig>(config.path.clone(), config.clone());
+			},
+			MiddlewareType::Patch => {
+				server.patch::<String, HttpConfig>(config.path.clone(), config.clone());
+			},
+			MiddlewareType::Post => {
+				server.post::<String, HttpConfig>(config.path.clone(), config.clone());
+			},
+			MiddlewareType::Put => {
+				server.put::<String, HttpConfig>(config.path.clone(), config.clone());
+			},
+			MiddlewareType::Use => {
+				server.utilize::<HttpConfig>(config.clone());
+			},
+		}
+	}
 
 	// Populate `server` from HTTP_CONFIG
 	// Setup routers and middlwares accordingly
@@ -226,13 +226,13 @@ pub fn listen(args: HashMap<String, Value>) -> Value {
 		.listen(args.get("socket").unwrap().as_string().unwrap())
 		.unwrap();
 	// Add `listener` to a global mutex like HTTP_CONFIG
-    // Then, on clearConfig, if the global mutex is not null, force quit the server and start a new one
-    *http_listener = Some(listener);
+	// Then, on clearConfig, if the global mutex is not null, force quit the server and start a new one
+	*http_listener = Some(listener);
 
 	Value::Null
 }
 
 pub fn clear_config(_args: HashMap<String, Value>) -> Value {
-    crate::HTTP_CONFIG.lock().unwrap().clear();
+	crate::HTTP_CONFIG.lock().unwrap().clear();
 	Value::Null
 }

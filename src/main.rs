@@ -2,7 +2,7 @@
 extern crate lazy_static;
 extern crate clap;
 extern crate futures;
-extern crate gotham;
+extern crate juno;
 extern crate nickel;
 extern crate tokio;
 
@@ -14,6 +14,7 @@ use http_config::HttpConfig;
 
 use std::collections::HashMap;
 use std::sync::Mutex;
+use std::time::Duration;
 
 use nickel::ListeningServer;
 
@@ -70,4 +71,8 @@ async fn main() {
 		.declare_function("clearConfig", server::clear_config)
 		.await
 		.unwrap();
+
+	loop {
+		tokio::time::delay_for(Duration::from_millis(1000)).await;
+	}
 }
