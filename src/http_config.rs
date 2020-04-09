@@ -1,26 +1,32 @@
-use nickel::Middleware;
 use gotham::models::Value;
+use nickel::{hyper::net::Fresh, Middleware, MiddlewareResult, Request, Response};
 
 pub struct HttpConfig {
-    pub config_type: MiddlewareType,
-    pub func_name: String,
-    pub path: String
+	pub config_type: MiddlewareType,
+	pub func_name: String,
+	pub path: String,
 }
 
 pub enum MiddlewareType {
-    USE,
-    DELETE,
-    GET,
-    OPTIONS,
-    POST,
-    PUT,
-    UPDATE,
+	DELETE,
+	GET,
+	OPTIONS,
+	POST,
+	PUT,
+	UPDATE,
+	USE,
 }
 
 pub struct MiddlewareContext {
-    pub data: Value
+	pub data: Value,
 }
 
 impl Middleware<MiddlewareContext> for HttpConfig {
-    // TODO implement the trait
+	fn invoke<'mw, 'conn>(
+		&'mw self,
+		_req: &mut Request<'mw, 'conn, MiddlewareContext>,
+		res: Response<'mw, MiddlewareContext, Fresh>,
+	) -> MiddlewareResult<'mw, MiddlewareContext> {
+		res.next_middleware()
+	}
 }
