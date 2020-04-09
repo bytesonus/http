@@ -1,20 +1,22 @@
 use gotham::models::Value;
 use nickel::{hyper::net::Fresh, Middleware, MiddlewareResult, Request, Response};
 
+#[derive(Clone)]
 pub struct HttpConfig {
 	pub config_type: MiddlewareType,
 	pub func_name: String,
 	pub path: String,
 }
 
+#[derive(Clone)]
 pub enum MiddlewareType {
-	DELETE,
-	GET,
-	OPTIONS,
-	POST,
-	PUT,
-	UPDATE,
-	USE,
+    Delete,
+    Get,
+	Options,
+	Patch,
+    Post,
+    Put,
+	Use
 }
 
 pub struct MiddlewareContext {

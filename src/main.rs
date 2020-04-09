@@ -21,7 +21,7 @@ use clap::{crate_name, crate_version};
 
 lazy_static! {
 	pub static ref HTTP_CONFIG: Mutex<Vec<HttpConfig>> = Mutex::new(Vec::new());
-	pub static ref LISTENER: Mutex<
+	pub static ref LISTENER: Mutex<Option<ListeningServer>> = Mutex::new(None);
 }
 
 #[tokio::main]
@@ -45,15 +45,15 @@ async fn main() {
 		.await
 		.unwrap();
 	module
+		.declare_function("patch", server::app_patch)
+		.await
+		.unwrap();
+	module
 		.declare_function("post", server::app_post)
 		.await
 		.unwrap();
 	module
 		.declare_function("put", server::app_put)
-		.await
-		.unwrap();
-	module
-		.declare_function("update", server::app_update)
 		.await
 		.unwrap();
 	module
