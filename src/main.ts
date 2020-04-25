@@ -1,108 +1,116 @@
 #!/usr/bin/env node
-import GothamModule from '../../gotham-nodejs/src/gotham-node';
+import JunoModule from '../../juno-nodejs/src/juno-node';
 import * as express from 'express';
-import * as http from 'http';
+import { createServer, Server } from 'http';
+import HttpConfig, { MiddlewareType } from './http-config';
 const metaData = require('./package.json');
 
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded());
+let configs: HttpConfig[] = [];
+let listeningServer: Server;
 
 async function main() {
-	const gotham = GothamModule.default('../gotham.sock');
+	const juno = JunoModule.default('../juno.sock');
+	HttpConfig.junoModule = juno;
 
-	await gotham.initialize(metaData.name, metaData.version);
+	await juno.initialize(metaData.name, metaData.version);
 
-	await gotham.declareFunction('use', (args: any) => {
-		app.use(args.path, async (req, res, next) => {
-			const response: any = await gotham.callFunction(args.function, getReqObject(req));
-			if (response.next === true) {
-				next(response.data);
-			} else {
-				if (response.contentType) {
-					res.contentType(response.contentType);
-				}
-				if (response.headers) {
-					for (const header in response.headers) {
-						if (response.headers.hasOwnProperty(header)) {
-							res.setHeader(header, response.headers[header]);
-						}
-					}
-				}
-				if (typeof(response.body) !== typeof('') || typeof(response.body) !== typeof(0)) {
-					res.send(JSON.stringify(response.body));
-				} else {
-					res.send(response.body);
-				}
-			}
-		});
+	await juno.declareFunction('clearConfig', () => {
+		configs = [];
 	});
 
-	await gotham.declareFunction('get', async (args: any) => {
-		app.get(args.path, async (req, res, next) => {
-			const response: any = await gotham.callFunction(args.function, getReqObject(req));
-			if (response.next === true) {
-				next(response.data);
-			} else {
-				if (response.contentType) {
-					res.contentType(response.contentType);
-				}
-				if (response.headers) {
-					for (const header in response.headers) {
-						if (response.headers.hasOwnProperty(header)) {
-							res.setHeader(header, response.headers[header]);
-						}
-					}
-				}
-				if (typeof(response.body) !== typeof('') || typeof(response.body) !== typeof(0)) {
-					res.send(JSON.stringify(response.body));
-				} else {
-					res.send(response.body);
-				}
-			}
-		});
+	await juno.declareFunction('use', (args: any) => {
+		configs.push(new HttpConfig(MiddlewareType.USE, args.path ?? "/", args.function));
 	});
 
-	await gotham.declareFunction('post', (args: any) => {
-		app.post(args.path, async (req, res, next) => {
-			const response: any = await gotham.callFunction(args.function, getReqObject(req));
-			if (response.next === true) {
-				next(response.data);
-			} else {
-				if (response.contentType) {
-					res.contentType(response.contentType);
-				}
-				if (response.headers) {
-					for (const header in response.headers) {
-						if (response.headers.hasOwnProperty(header)) {
-							res.setHeader(header, response.headers[header]);
-						}
-					}
-				}
-				if (typeof(response.body) !== typeof('') || typeof(response.body) !== typeof(0)) {
-					res.send(JSON.stringify(response.body));
-				} else {
-					res.send(response.body);
-				}
-			}
-		});
+	await juno.declareFunction('connect', (args: any) => {
+		configs.push(new HttpConfig(MiddlewareType.CONNECT, args.path ?? "/", args.function));
 	});
 
-	await gotham.declareFunction('patch', (args: any) => {
-		app.patch(args.path, async (req, res, next) => {
-			const response: any = await gotham.callFunction(args.function, getReqObject(req));
-			if (response.next === true) {
-				next(response.data);
-			} else {
-				if (response.contentType) {
-					res.contentType(response.contentType);
-				}
-				if (response.headers) {
-					for (const header in response.headers) {
-						if (response.headers.hasOwnProperty(header)) {
-							res.setHeader(header, response.headers[header]);
-						}
-					}
-				}
-				if (typeof(response.body) !== typeof('') || typeof(response.body) !== typeof(0)) {
-					res.send(JSON.st
+	await juno.declareFunction('delete', (args: any) => {
+		configs.push(new HttpConfig(MiddlewareType.DELETE, args.path ?? "/", args.function));
+	});
+
+	await juno.declareFunction('get', (args: any) => {
+		configs.push(new HttpConfig(MiddlewareType.GET, args.path ?? "/", args.function));
+	});
+
+	await juno.declareFunction('head', (args: any) => {
+		configs.push(new HttpConfig(MiddlewareType.HEAD, args.path ?? "/", args.function));
+	});
+
+	await juno.declareFunction('options', (args: any) => {
+		configs.push(new HttpConfig(MiddlewareType.OPTIONS, args.path ?? "/", args.function));
+	});
+
+	await juno.declareFunction('patch', (args: any) => {
+		configs.push(new HttpConfig(MiddlewareType.PATCH, args.path ?? "/", args.function));
+	});
+
+	await juno.declareFunction('post', (args: any) => {
+		configs.push(new HttpConfig(MiddlewareType.POST, args.path ?? "/", args.function));
+	});
+
+	await juno.declareFunction('put', (args: any) => {
+		configs.push(new HttpConfig(MiddlewareType.PUT, args.path ?? "/", args.function));
+	});
+
+	await juno.declareFunction('trace', (args: any) => {
+		configs.push(new HttpConfig(MiddlewareType.TRACE, args.path ?? "/", args.function));
+	});
+
+	await juno.declareFunction('listen', async (args: any) => {
+		if (listeningServer) {
+			await new Promise(resolve => {
+				listeningServer.close(resolve);
+			});
+		}
+
+		const app = express();
+
+		configs.forEach(config => {
+			switch (config.middlewareType) {
+				case MiddlewareType.USE:
+					app.use(config.path, config.executeRoute);
+					break;
+				case MiddlewareType.CONNECT:
+					app.connect(config.path, config.executeRoute);
+					break;
+				case MiddlewareType.DELETE:
+					app.delete(config.path, config.executeRoute);
+					break;
+				case MiddlewareType.GET:
+					app.get(config.path, config.executeRoute);
+					break;
+				case MiddlewareType.HEAD:
+					app.head(config.path, config.executeRoute);
+					break;
+				case MiddlewareType.OPTIONS:
+					app.options(config.path, config.executeRoute);
+					break;
+				case MiddlewareType.PATCH:
+					app.patch(config.path, config.executeRoute);
+					break;
+				case MiddlewareType.POST:
+					app.post(config.path, config.executeRoute);
+					break;
+				case MiddlewareType.PUT:
+					app.put(config.path, config.executeRoute);
+					break;
+				case MiddlewareType.TRACE:
+					app.trace(config.path, config.executeRoute);
+					break;
+			}
+		});
+
+		let server = createServer(app);
+		await new Promise(resolve => {
+			listeningServer = server.listen(
+				args.port ?? 3000,
+				args.bindAddr ?? "127.0.0.1",
+				resolve
+			);
+		});
+	});
+}
+
+main()

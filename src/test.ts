@@ -1,13 +1,13 @@
-import GothamModule from '../../gotham-nodejs/src/gotham-node';
+import junoModule from '../../juno-nodejs/src/juno-node';
 
 async function main() {
-	const gotham = GothamModule.default('../../gotham.sock');
+	const juno = junoModule.default('../../juno.sock');
 
-	await gotham.initialize('test', '1.0.0', {
+	await juno.initialize('test', '1.0.0', {
 		'http2': '1.0.0'
 	});
 
-	await gotham.declareFunction('onRequest', async (args: any) => {
+	await juno.declareFunction('onRequest', async (args: any) => {
 		return {
 			contentType: 'json',
 			body: JSON.stringify({
@@ -18,12 +18,12 @@ async function main() {
 		};
 	});
 
-	await gotham.callFunction('http2.get', {
+	await juno.callFunction('http2.get', {
 		path: '/',
 		function: 'test.onRequest'
 	});
 
-	await gotham.callFunction('http2.listen', {
+	await juno.callFunction('http2.listen', {
 		port: 8080
 	});
 }

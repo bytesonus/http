@@ -6,6 +6,9 @@
             "dom",
             "es2018",
             "es5"
-        ]
+        ],
+		"typeRoots": [
+			"src/models.ts"
+		]
     }
 }

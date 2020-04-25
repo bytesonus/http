@@ -1,6 +1,6 @@
 {
 	"name": "http",
-	"version": "1.0.0",
+	"version": "0.1.0",
 	"private": true,
 	"scripts": {
 		"start": "ts-node main.ts"
