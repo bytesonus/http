@@ -1,6 +1,3 @@
-use juno::models::Value;
-use nickel::{hyper::net::Fresh, Middleware, MiddlewareResult, Request, Response};
-
 #[derive(Clone)]
 pub struct HttpConfig {
 	pub config_type: MiddlewareType,
@@ -16,19 +13,19 @@ pub enum MiddlewareType {
 	Patch,
 	Post,
 	Put,
-	Use
+	Use,
 }
 
-pub struct MiddlewareContext {
-	pub data: Value,
-}
-
-impl Middleware<MiddlewareContext> for HttpConfig {
-	fn invoke<'mw, 'conn>(
-		&'mw self,
-		_req: &mut Request<'mw, 'conn, MiddlewareContext>,
-		res: Response<'mw, MiddlewareContext, Fresh>,
-	) -> MiddlewareResult<'mw, MiddlewareContext> {
-		res.next_middleware()
+impl MiddlewareType {
+	pub fn to_capitalized_string(&self) -> &str {
+		match self {
+			MiddlewareType::Delete => "DELETE",
+			MiddlewareType::Get => "GET",
+			MiddlewareType::Options => "OPTIONS",
+			MiddlewareType::Patch => "PATCH",
+			MiddlewareType::Post => "POST",
+			MiddlewareType::Put => "PUT",
+			MiddlewareType::Use => "USE",
+		}
 	}
 }

@@ -1,32 +1,36 @@
 #[macro_use]
 extern crate lazy_static;
+extern crate bytes;
 extern crate clap;
 extern crate futures;
 extern crate juno;
-extern crate nickel;
+extern crate thruster;
 extern crate tokio;
 
 mod cli_parser;
 mod http_config;
+mod http_context;
 mod server;
 
 use http_config::HttpConfig;
 
-use std::collections::HashMap;
-use std::sync::Mutex;
-use std::time::Duration;
+use std::{collections::HashMap, sync::Mutex, time::Duration};
 
-use nickel::ListeningServer;
+use thruster::Server;
 
 use clap::{crate_name, crate_version};
 
 lazy_static! {
 	pub static ref HTTP_CONFIG: Mutex<Vec<HttpConfig>> = Mutex::new(Vec::new());
-	pub static ref LISTENER: Mutex<Option<ListeningServer>> = Mutex::new(None);
+	pub static ref LISTENER: Mutex<Option<Server<http_context::HttpContext, ()>>> =
+		Mutex::new(None);
 }
 
-#[tokio::main]
-async fn main() {
+//#[tokio::main]
+fn main() {
+	server::listen(HashMap::new());
+
+	/*
 	let mut module = cli_parser::from_cli_args();
 	module
 		.initialize(crate_name!(), crate_version!(), HashMap::new())
@@ -72,7 +76,20 @@ async fn main() {
 		.await
 		.unwrap();
 
+	module
+		.call_function("logger.verbose", {
+			let mut map = HashMap::new();
+			map.insert(
+				"data".to_owned(),
+				juno::models::Value::String("Some data here".to_owned()),
+			);
+			map
+		})
+		.await
+		.unwrap();
+
 	loop {
 		tokio::time::delay_for(Duration::from_millis(1000)).await;
 	}
+	*/
 }

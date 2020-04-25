@@ -1,11 +1,16 @@
-use crate::http_config::MiddlewareType;
-use crate::http_config::HttpConfig;
-use crate::http_config::MiddlewareContext;
+use crate::{
+	http_config::{HttpConfig, MiddlewareType},
+	http_context::HttpContext,
+};
 
 use std::collections::HashMap;
 
+use juno::models::Number;
 use juno::models::Value;
-use nickel::{Nickel, HttpRouter};
+use thruster::{
+	async_middleware, middleware_fn, App, Context, MiddlewareNext, MiddlewareResult, Request,
+	Server, ThrusterServer,
+};
 
 pub fn app_delete(args: HashMap<String, Value>) -> Value {
 	let value = Value::String(String::from("/"));
@@ -176,7 +181,7 @@ pub fn app_use(args: HashMap<String, Value>) -> Value {
 }
 
 pub fn listen(args: HashMap<String, Value>) -> Value {
-	let mut http_listener = crate::LISTENER.lock().unwrap();
+	let http_listener = crate::LISTENER.lock().unwrap();
 	let http_config = crate::HTTP_CONFIG.lock().unwrap();
 
 	if http_listener.is_some() {
@@ -185,35 +190,38 @@ pub fn listen(args: HashMap<String, Value>) -> Value {
 		panic!("Excuse me wtf?");
 	}
 
-	let mut server = Nickel::with_data(MiddlewareContext {
-		data: Value::Null
-	});
+	let mut app =
+		App::<Request, HttpContext, Vec<HttpConfig>>::create(generate_context, http_config.clone());
+	app.use_middleware("/", async_middleware!(HttpContext, [handle_middleware]));
 
 	for config in http_config.iter() {
+		let path = config.path.clone();
+		let path = Box::leak(path.into_boxed_str());
 		match &config.config_type {
 			MiddlewareType::Delete => {
-				server.delete::<String, HttpConfig>(config.path.clone(), config.clone());
-			},
+				app.delete(path, async_middleware!(HttpContext, [handle_data]));
+			}
 			MiddlewareType::Get => {
-				server.get::<String, HttpConfig>(config.path.clone(), config.clone());
-			},
+				app.get(path, async_middleware!(HttpContext, [handle_data]));
+			}
 			MiddlewareType::Options => {
-				server.options::<String, HttpConfig>(config.path.clone(), config.clone());
-			},
+				app.options(path, async_middleware!(HttpContext, [handle_data]));
+			}
 			MiddlewareType::Patch => {
-				server.patch::<String, HttpConfig>(config.path.clone(), config.clone());
-			},
+				app.update(path, async_middleware!(HttpContext, [handle_data]));
+			}
 			MiddlewareType::Post => {
-				server.post::<String, HttpConfig>(config.path.clone(), config.clone());
-			},
+				app.post(path, async_middleware!(HttpContext, [handle_data]));
+			}
 			MiddlewareType::Put => {
-				server.put::<String, HttpConfig>(config.path.clone(), config.clone());
-			},
-			MiddlewareType::Use => {
-				server.utilize::<HttpConfig>(config.clone());
-			},
+				app.put(path, async_middleware!(HttpContext, [handle_data]));
+			}
+			MiddlewareType::Use => {}
 		}
 	}
+	app.set404(async_middleware!(HttpContext, [handle_404]));
+
+	let server = Server::new(app);
 
 	// Populate `server` from HTTP_CONFIG
 	// Setup routers and middlwares accordingly
@@ -222,12 +230,25 @@ pub fn listen(args: HashMap<String, Value>) -> Value {
 		return Value::Null;
 	}
 
-	let listener = server
-		.listen(args.get("socket").unwrap().as_string().unwrap())
-		.unwrap();
+	tokio::spawn(async move {
+		server
+			.build(
+				args.get("socket")
+					.unwrap_or(&Value::String("127.0.0.1".to_string()))
+					.as_string()
+					.unwrap_or(&String::from("127.0.0.1")),
+				args.get("port")
+					.unwrap_or(&Value::Number(Number::PosInt(3000)))
+					.as_number()
+					.unwrap_or(&Number::PosInt(3000))
+					.as_u64()
+					.unwrap_or(3000) as u16,
+			)
+			.await;
+	});
 	// Add `listener` to a global mutex like HTTP_CONFIG
 	// Then, on clearConfig, if the global mutex is not null, force quit the server and start a new one
-	*http_listener = Some(listener);
+	//*http_listener = Some(server);
 
 	Value::Null
 }
@@ -235,4 +256,52 @@ pub fn listen(args: HashMap<String, Value>) -> Value {
 pub fn clear_config(_args: HashMap<String, Value>) -> Value {
 	crate::HTTP_CONFIG.lock().unwrap().clear();
 	Value::Null
+}
+
+fn generate_context(request: Request, state: &Vec<HttpConfig>, path: &str) -> HttpContext {
+	let start = request.method().len() + 4;
+	let matched_route = String::from(&path[start..]);
+
+	HttpContext::new(request, matched_route, state.clone())
+}
+
+#[middleware_fn]
+async fn handle_data(
+	mut context: HttpContext,
+	next: MiddlewareNext<HttpContext>,
+) -> MiddlewareResult<HttpContext> {
+	let fn_name = context
+		.route_configs
+		.iter()
+		.filter(|config| {
+			context.method() == config.config_type.to_capitalized_string()
+				&& context.matched_route() == &config.path
+		})
+		.next();
+	if fn_name.is_none() {
+		return next(context).await;
+	}
+	let fn_name = fn_name.unwrap();
+	// TODO get an instance to juno module from here and call the function
+
+	Ok(context)
+}
+
+#[middleware_fn]
+async fn handle_middleware(
+	context: HttpContext,
+	next: MiddlewareNext<HttpContext>,
+) -> MiddlewareResult<HttpContext> {
+	println!("Got middleware on {}", context.matched_route());
+	next(context).await
+}
+
+#[middleware_fn]
+async fn handle_404(
+	mut context: HttpContext,
+	_next: MiddlewareNext<HttpContext>,
+) -> MiddlewareResult<HttpContext> {
+	context.status(404);
+	context.body(&format!("Cannot {} {}", context.method(), context.route()));
+	Ok(context)
 }
