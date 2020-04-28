@@ -7,12 +7,13 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-juno = "0.1"
-lazy_static = "1.4.0"
+juno = { path = "../juno-rust" }
 clap = "2.33.0"
 futures = "0.3.4"
 thruster = "0.9.0-alpha.8"
 bytes = "0.5.4"
+lazy_static = "1.4.0"
+serde_json = "1.0.52"
 
 [dependencies.tokio]
 version = "0.2.5"

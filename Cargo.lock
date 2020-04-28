@@ -322,9 +322,9 @@ dependencies = [
 
 [[package]]
 name = "hermit-abi"
-version = "0.1.11"
+version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a0d737e0f947a1864e93d33fdef4af8445a00d1ed8dc0c8ddb73139ea6abf15"
+checksum = "61565ff7aaace3525556587bd2dc31d4a07071957be715e63ce7b1eccf51a8f4"
 dependencies = [
  "libc",
 ]
@@ -338,6 +338,7 @@ dependencies = [
  "futures 0.3.4",
  "juno",
  "lazy_static",
+ "serde_json",
  "thruster",
  "tokio",
 ]
@@ -388,8 +389,6 @@ checksum = "b8b7a7c0c47db5545ed3fef7468ee7bb5b74691498139e4b3f6a20685dc6dd8e"
 [[package]]
 name = "juno"
 version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30daf3321be539ae2c45992f6309ae78d98844f40f34b448bbabb2ae554415be"
 dependencies = [
  "async-std",
  "async-trait",
@@ -762,9 +761,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.51"
+version = "1.0.52"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da07b57ee2623368351e9a0488bb0b261322a15a6e0ae53e243cbdc0f4208da9"
+checksum = "a7894c8ed05b7a3a279aeb79025fdec1d3158080b75b98a08faf2806bb799edd"
 dependencies = [
  "itoa",
  "ryu",
@@ -856,9 +855,9 @@ dependencies = [
 
 [[package]]
 name = "thruster"
-version = "0.9.0-alpha.8"
+version = "0.9.0-alpha.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe496baf41937762dacdd775eb4845b8ad4feaab4ec84bc3b1904cb676812b1d"
+checksum = "de8331fef1fd6a44c4fe3e1bd93f905a237594c3fb7f733b28d8af08b133f011"
 dependencies = [
  "async-trait",
  "bytes 0.5.4",
@@ -907,9 +906,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "0.2.18"
+version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34ef16d072d2b6dc8b4a56c70f5c5ced1a37752116f8e7c1e80c659aa7cb6713"
+checksum = "7d9c43f1bb96970e153bcbae39a65e249ccb942bd9d36dbdf086024920417c9c"
 dependencies = [
  "bytes 0.5.4",
  "fnv",

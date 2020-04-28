@@ -1,3 +1,18 @@
+use juno::{models::Value, Result};
+use std::{collections::HashMap, net::SocketAddr};
+use tokio::sync::oneshot::Sender;
+
+pub enum HttpServerCommands {
+	AddConfig(HttpConfig),
+	ClearConfig,
+	Listen(SocketAddr),
+}
+
+pub enum JunoCommands {
+	CallFunction(String, HashMap<String, Value>, Sender<Result<Value>>),
+	TriggerHook(String),
+}
+
 #[derive(Clone)]
 pub struct HttpConfig {
 	pub config_type: MiddlewareType,
