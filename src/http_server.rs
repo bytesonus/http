@@ -145,6 +145,11 @@ async fn handle_data(
 		}
 		next(context).await
 	} else {
+		if let Some(Value::String(url)) = response.get("redirect") {
+			context.redirect(url);
+			return Ok(context);
+		}
+
 		if let Some(content_type) = response.get("contentType") {
 			context.set_content_type(
 				content_type
@@ -185,9 +190,103 @@ async fn handle_data(
 
 #[middleware_fn]
 async fn handle_middleware(
-	context: HttpContext,
+	mut context: HttpContext,
 	next: MiddlewareNext<HttpContext>,
 ) -> MiddlewareResult<HttpContext> {
-	println!("Got middleware on {}", context.matched_route());
-	next(context).await
+	let fn_name: Vec<&HttpConfig> = context
+		.http_configs
+		.iter()
+		.filter(|config| {
+			config.config_type == MiddlewareType::Use
+				&& context.matched_route().starts_with(&config.path)
+		})
+		.collect();
+	if fn_name.get(0).is_none() {
+		return next(context).await;
+	}
+	let fn_name = &fn_name.get(0).unwrap().func_name;
+
+	let (sender, receiver) = channel::<Result<Value>>();
+
+	let result = context.juno_sender.send(JunoCommands::CallFunction(
+		fn_name.clone(),
+		context.juno_representation().clone(),
+		sender,
+	));
+	if result.is_err() {
+		println!(
+			"Error sending command across channels: {}",
+			result.unwrap_err()
+		);
+		return next(context).await;
+	}
+
+	let response = receiver.await;
+	if response.is_err() {
+		println!(
+			"Error receiving command across channels: {}",
+			response.unwrap_err()
+		);
+		return next(context).await;
+	}
+	let response = response.unwrap();
+	if response.is_err() {
+		println!("Error calling function on juno: {}", response.unwrap_err());
+		return next(context).await;
+	}
+	let response = response.unwrap();
+
+	if response.as_object().is_none() {
+		println!("Didn't get back object from function response");
+		return next(context).await;
+	}
+	let response = response.as_object().unwrap();
+
+	if response.get("next") == Some(&Value::Bool(true)) {
+		if response.get("data").is_some() {
+			context.data = response.get("data").unwrap().clone();
+		}
+		next(context).await
+	} else {
+		if let Some(Value::String(url)) = response.get("redirect") {
+			context.redirect(url);
+			return Ok(context);
+		}
+
+		if let Some(content_type) = response.get("contentType") {
+			context.set_content_type(
+				content_type
+					.as_string()
+					.unwrap_or(&String::from("text/html")),
+			);
+		}
+
+		if let Some(Value::Object(headers)) = response.get("headers") {
+			let _ = headers.iter().map(|item| {
+				if item.1.is_string() {
+					context.set(item.0, item.1.as_string().unwrap());
+				}
+			});
+		}
+
+		if let Some(Value::Number(Number::PosInt(num))) = response.get("status") {
+			context.status(*num as u32);
+		}
+
+		if let Some(json) = response.get("json") {
+			context.set_content_type("application/json");
+			let json: serde_json::Value = json.clone().into();
+			context.body(&json.to_string());
+		} else {
+			context.body(
+				response
+					.get("body")
+					.unwrap_or(&Value::Null)
+					.as_string()
+					.unwrap_or(&String::from("")),
+			);
+		}
+
+		Ok(context)
+	}
 }

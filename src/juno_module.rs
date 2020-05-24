@@ -174,7 +174,7 @@ pub async fn juno_loop(
 				}
 			}
 			JunoCommands::TriggerHook(hook_name) => {
-				let result = module.trigger_hook(&hook_name).await;
+				let result = module.trigger_hook(&hook_name, Value::Null).await;
 				if result.is_err() {
 					println!("Error triggering hook: {}", result.unwrap_err());
 				}

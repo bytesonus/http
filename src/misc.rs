@@ -8,6 +8,7 @@ pub enum HttpServerCommands {
 	Listen(SocketAddr),
 }
 
+#[allow(dead_code)]
 pub enum JunoCommands {
 	CallFunction(String, HashMap<String, Value>, Sender<Result<Value>>),
 	TriggerHook(String),
@@ -20,7 +21,7 @@ pub struct HttpConfig {
 	pub path: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum MiddlewareType {
 	Delete,
 	Get,

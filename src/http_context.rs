@@ -128,7 +128,7 @@ impl HttpContext {
 		);
 
 		let mut raw_headers: Vec<Value> = vec![];
-		let _ = self.headers.iter().map(|item| {
+		self.headers.iter().for_each(|item| {
 			raw_headers.push(Value::String(item.0.clone()));
 			raw_headers.push(Value::String(item.1.clone()));
 		});
